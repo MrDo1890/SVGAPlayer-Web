@@ -184,13 +184,99 @@ export class Renderer {
                 })
                 let dynamicText = this._owner._dynamicText[sprite.imageKey];
                 if (dynamicText !== undefined) {
+                    let colorInfo = this.compterColor(dynamicText.color);
+                    let shadowInfo = dynamicText.textShadow;
                     ctx.textBaseline = "middle";
                     ctx.font = dynamicText.style;
-                    let textWidth = ctx.measureText(dynamicText.text).width
+                    let textWidth = ctx.measureText(dynamicText.text).width;
                     ctx.fillStyle = dynamicText.color;
+                    //text shadow
+                    if (Object.prototype.toString.call(shadowInfo) == "[object Object]") {
+                        ctx.shadowColor = shadowInfo.color;
+                        ctx.shadowOffsetX = shadowInfo.offsetX;
+                        ctx.shadowOffsetY = shadowInfo.offsetY;
+                        ctx.shadowBlur = shadowInfo.blur;
+                    }
+                    //linear-gradient
+                    if (Object.prototype.toString.call(colorInfo) == "[object Object]") {
+                        let direction;
+                        try {
+                            switch(colorInfo.direction) {
+                                case "to left":
+                                    direction=[frameItem.layout.width,0,0,0];
+                                break;
+                                case "to right":
+                                    direction=[0,0,0,frameItem.layout.width];
+                                break;
+                                case "to top":
+                                    direction=[0,frameItem.layout.height,0,0];
+                                break;
+                                case "to bottom":
+                                    direction=[0,0,0,frameItem.layout.height];
+                                break;
+                                default:
+                                    direction=[frameItem.layout.width,0,0,0];
+                                break;
+
+                            }
+                            if (colorInfo.addColor && colorInfo.addColor.length > 0) {
+                                var gradient = ctx.createLinearGradient(direction[0], direction[1], direction[2], direction[3]);
+                                colorInfo.addColor.forEach((item) => {
+                                    gradient.addColorStop(item[0],item[1]);
+                                });
+                            }
+                            ctx.fillStyle = gradient
+                        } catch (e) {
+                            ctx.fillStyle = dynamicText.color;
+                        }
+                    } else {
+                        ctx.fillStyle = dynamicText.color;
+                    }
                     let offsetX = (dynamicText.offset !== undefined && dynamicText.offset.x !== undefined) ? isNaN(parseFloat(dynamicText.offset.x)) ? 0 : parseFloat(dynamicText.offset.x) : 0;
                     let offsetY = (dynamicText.offset !== undefined && dynamicText.offset.y !== undefined) ? isNaN(parseFloat(dynamicText.offset.y)) ? 0 : parseFloat(dynamicText.offset.y) : 0;
-                    ctx.fillText(dynamicText.text, (frameItem.layout.width - textWidth) / 2 + offsetX, frameItem.layout.height / 2 + offsetY);
+                    let pointX = 0,
+                        pointY = 0;
+                    switch (dynamicText.align) {
+                        case "left":
+                        pointX = 0;
+                        pointY = frameItem.layout.height / 2 + offsetY;
+                        break;
+                        case "right":
+                        pointX = frameItem.layout.width - textWidth;
+                        pointY = frameItem.layout.height / 2 + offsetY;
+                        break;
+                        default:
+                        pointX = (frameItem.layout.width - textWidth) / 2 + offsetX;
+                        pointY = frameItem.layout.height / 2 + offsetY;
+                        break;
+                    }
+                    //描边
+                    if (dynamicText.stroke) {
+                        let stroke = {
+                            width:'1px',
+                            color:"#ffffff"
+                        }
+                        if (Object.prototype.toString.call(dynamicText.stroke) !== "[object Object]") {
+                            dynamicText.stroke = {};
+                        }
+                        stroke = {
+                            ...stroke,
+                            ...dynamicText.stroke
+                        }
+                        ctx.lineWidth = stroke.width;
+                        ctx.strokeStyle = stroke.color;
+                        //判断是外描边还是内描边
+                        if (stroke.style && stroke.style == 'out') {
+                            ctx.strokeText(dynamicText.text, pointX , pointY);
+                            ctx.fillText(dynamicText.text, pointX , pointY);
+                        } else {
+                            ctx.fillText(dynamicText.text, pointX , pointY);
+                            ctx.strokeText(dynamicText.text, pointX , pointY);
+                        }
+
+                    } else {
+                        ctx.fillText(dynamicText.text, pointX , pointY);
+                    }
                 }
                 ctx.restore();
             });
@@ -459,5 +545,30 @@ export class Renderer {
             ctx.stroke();
         }
         ctx.restore();
+    }
+    compterColor(arg) {
+        var reg=/linear\-gradient\s*?\((.*?)\)/gi,
+            regRes = reg.exec(arg),
+            result = {};
+            result.addColor = [];
+        if (regRes && regRes.length > 1) {
+            let info = regRes[1].split(',');
+            info.forEach((item, index) => {
+                if (index === 0) {
+                    result.direction = item.trim();
+                } else {
+                    let colorStopInfo = item.trim().split(" ");
+                    if (colorStopInfo.length > 1) {
+                        result.addColor.push([parseInt(colorStopInfo[1]) / 100, colorStopInfo[0]])
+                    } else {
+                        result.addColor.push([index+1 < info.length ? 0 : 1, colorStopInfo[0]])
+                    }
+
+                 }
+            })
+        } else {
+            result = arg;
+        }
+        return result;
     }
 }

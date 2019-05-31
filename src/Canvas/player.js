@@ -39,6 +39,20 @@ export class Player {
         this._doStart(undefined, reverse, undefined);
     }
 
+    startAnimationWithRangeList(arr) {
+        var self = this;
+        self.stopAnimation(false);
+        if (arr.length > 1) {
+            let range = arr.shift();
+            self._doStart(range, range.reverse, undefined, function() {
+                self.startAnimationWithRangeList(arr);
+            });
+        } else {
+            let range = arr.shift();
+            self._doStart(range, range.reverse, undefined);
+        }
+    }
+
     startAnimationWithRange(range, reverse) {
         this.stopAnimation(false);
         this._doStart(range, reverse, undefined)
@@ -95,15 +109,22 @@ export class Player {
 
     setText(textORMap, forKey) {
         let text = typeof textORMap === "string" ? textORMap : textORMap.text;
+        let align = typeof textORMap === "string" ?  "" : textORMap.align || "";
         let size = (typeof textORMap === "object" ? textORMap.size : "14px") || "14px";
         let family = (typeof textORMap === "object" ? textORMap.family : "") || "";
         let color = (typeof textORMap === "object" ? textORMap.color : "#000000") || "#000000";
         let offset = (typeof textORMap === "object" ? textORMap.offset : { x: 0.0, y: 0.0 }) || { x: 0.0, y: 0.0 };
+        let textShadow = (typeof textORMap === "object" ? textORMap.textShadow : "" ) || "";
+        let stroke = (typeof textORMap == "object" && textORMap.stroke) ? textORMap.stroke : null ;
+        let font = (typeof textORMap == "object" && textORMap.font && typeof textORMap.font == "string" ? textORMap.font : `${size} ${family}` );
         this._dynamicText[forKey] = {
             text,
-            style: `${size} ${family}`,
+            style: font,
             color,
             offset,
+            textShadow,
+            align,
+            stroke,
         };
     }
 
@@ -173,7 +194,7 @@ export class Player {
         this._renderer = new Renderer(this);
     }
 
-    _doStart(range, reverse, fromFrame) {
+    _doStart(range, reverse, fromFrame, callback) {
         this._animator = new ValueAnimator()
         if (range !== undefined) {
             this._animator.startValue = Math.max(0, range.location)
@@ -208,7 +229,9 @@ export class Player {
             if (this.clearsAfterStop === true) {
                 this.clear()
             }
-            if (typeof this._onFinished === "function") {
+            if (typeof callback === "function") {
+                callback()
+            } else if (typeof this._onFinished === "function") {
                 this._onFinished();
             }
         }
@@ -255,7 +278,7 @@ export class Player {
                 else if (this._contentMode === "AspectFit" || this._contentMode === "AspectFill") {
                     const imageRatio = imageSize.width / imageSize.height;
                     const viewRatio = targetSize.width / targetSize.height;
-                    if ((imageRatio >= viewRatio && this._contentMode === "AspectFit") || (imageRatio <= viewRatio && this._contentMode === "AspectFill")) {
+                    if ((imageRatio >= viewRatio && this._contentMode === "AspectFit") || (imageRatio < viewRatio && this._contentMode === "AspectFill")) {
                         const scale = targetSize.width / imageSize.width;
                         const translateX = (imageSize.width * scale - imageSize.width) / 2.0
                         const translateY = (imageSize.height * scale - imageSize.height) / 2.0 + (targetSize.height - imageSize.height * scale) / 2.0
@@ -301,5 +324,4 @@ export class Player {
         this._renderer.drawFrame(this._currentFrame);
         this._renderer.playAudio(this._currentFrame);
     }
-
 }
