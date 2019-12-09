@@ -8,6 +8,11 @@ export class SpriteEntity {
     /**
      * string
      */
+    matteKey = null
+
+    /**
+     * string
+     */
     imageKey = null
 
     /**
@@ -16,6 +21,7 @@ export class SpriteEntity {
     frames = []
 
     constructor(spec) {
+        this.matteKey = spec.matteKey;
         this.imageKey = spec.imageKey;
         if (spec.frames) {
             this.frames = spec.frames.map((obj) => {

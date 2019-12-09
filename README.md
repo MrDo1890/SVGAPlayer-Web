@@ -2,6 +2,8 @@
 
 Language: [中文](README.zh.md)
 
+SVGAPlayer 现已支持在微信小程序播放动画，详情请[参阅](https://github.com/yyued/SVGAPlayer-Web/tree/mp)。
+
 ## News
 
 * **[Lite Version](https://github.com/svga/SVGAPlayer-Web-Lite)**
@@ -118,6 +120,7 @@ player.setText('Hello, World!', 'ImageKey');
 ```
 player.setText({ 
     text: 'Hello, World!', 
+    family: 'Arial',
     size: "24px", 
     color: "#ffe0a4",
     offset: {x: 0.0, y: 0.0}
@@ -149,7 +152,7 @@ You use SVGA.Player controls animation play and stop.
 * stepToFrame(frame: int, andPlay: Boolean); - stop to specific frame, play animation while andPlay === true
 * stepToPercentage(percentage: float, andPlay: Boolean); - stop to specific percentage, play animation while andPlay === true
 * setImage(image: string, forKey: string, transform: [a, b, c, d, tx, ty]); - Replace Animation Images Dynamically, transform is optional, transform could adjust replacing image.
-* setText(text: string | {text: string, font: string, size: string, color: string, offset: {x: float, y: float}}, forKey: string); - Add Text on Animation Image Dynamically
+* setText(text: string | {text: string, family: string, size: string, color: string, offset: {x: float, y: float}}, forKey: string); - Add Text on Animation Image Dynamically
 * clearDynamicObjects(); - clear all dynamic objects.
 
 #### Callback Method
